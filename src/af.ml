@@ -3,7 +3,7 @@ module E = Errormsg
 
 let af_func_name : string ref = ref ""
 
-class testVisitor = object(self)
+class afVisitor = object(self)
 	inherit nopCilVisitor
 
   val mutable at_func = false
@@ -30,17 +30,16 @@ class testVisitor = object(self)
       ChangeTo([df_monitor_call ; st])
 end;;
 
-let handle_f (f : fundec) : unit =
-  visitCilFunction (new testVisitor) f
+let handle_f (vis : cilVisitor) (f : fundec) : unit =
+  visitCilFunction vis f
   |> ignore
 
-let handle_file (f : file) : unit =
-  List.iter (fun f ->
+let file_handler (vis : cilVisitor) : (file -> unit) =
+  fun f -> ((List.iter (fun f ->
     match f with
-    | GFun(fd, _) -> handle_f fd
+    | GFun(fd, _) -> handle_f vis fd
     | _ -> ()
-  ) f.globals;
-  ()
+  ) f.globals) |> ignore)
 
 let feature : featureDescr = 
   { fd_name = "af";
@@ -49,6 +48,6 @@ let feature : featureDescr =
     fd_extraopt = [
 			("--af-func", Arg.Set_string af_func_name, " Set the function name");
     ];
-    fd_doit = handle_file;
+    fd_doit = (file_handler (new afVisitor));
     fd_post_check = true;
   }
