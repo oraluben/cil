@@ -105,6 +105,7 @@ let features : C.featureDescr list =
     Ptranal.feature;
     Liveness.feature;
     Af.feature;
+    Bf.feature;
   ] 
   @ Feature_config.features 
 
