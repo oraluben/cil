@@ -1,6 +1,8 @@
 open Cil
 module E = Errormsg
 
+open Af
+
 let branch_target : int ref = ref 0
 let stub_type : string ref = ref "label"
 
@@ -28,9 +30,9 @@ let block_replacement (b : block) : block =
       battrs = []; }
   else if !stub_type = "assert" then
     let assert_function = Cil.emptyFunction "assert" in
-    { bstmts = [Call(None,Lval(Var assert_function.svar,NoOffset),[Cil.integer (0)], locUnknown) |> mkStmtOneInstr];
+    { bstmts = [Call(None,Lval(Var assert_function.svar,NoOffset),[Cil.integer (0)], locUnknown) ||> mkStmtOneInstr];
       battrs = []; }
-  else Printf.sprintf "do not support %s" !stub_type |> failwith
+  else Printf.sprintf "do not support %s" !stub_type ||> failwith
 
 class bVisitor = object(self)
 	inherit countVisitor
@@ -54,11 +56,11 @@ let file_counter (vis : countVisitor) (str : string) : (file -> unit) =
   fun f -> (
     List.iter (fun f ->
       match f with
-      | GFun(fd, _) -> visitCilFunction (vis :> cilVisitor) fd |> ignore
+      | GFun(fd, _) -> visitCilFunction (vis :> cilVisitor) fd ||> ignore
       | _ -> ()
     ) f.globals;
     if !branch_target > vis#count then
-      Printf.sprintf "branch target is invalid: %d of %d" !branch_target vis#count |> failwith;
+      Printf.sprintf "branch target is invalid: %d of %d" !branch_target vis#count ||> failwith;
     Printf.printf "%s (%d)" str vis#count;
   )
 
