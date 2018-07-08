@@ -1,4 +1,7 @@
+import logging
 from argparse import ArgumentParser
+from json import dumps
+
 from pathlib import Path
 from re import match
 from subprocess import run, PIPE
@@ -17,6 +20,18 @@ assert stub_c.exists()
 assert api_c.exists()
 
 ext_files, stub_c, api_c = map(str, [ext_files, stub_c, api_c])
+
+_cil_help = run(['cilly.native', '--help'], stdout=PIPE).stdout.decode()
+
+assert '--doaf_branch' in _cil_help
+assert '--doaf' in _cil_help
+
+logger = logging.getLogger('su')
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(ch)
 
 
 class P:
@@ -50,7 +65,9 @@ class Function(P):
             self._cil_c = _f.name
             _f.close()
             _cil_cmd = [
-                'cilly.native', '--domakeCFG', '--doaf',
+                'cilly.native',
+                # '--noPrintLn',
+                '--domakeCFG', '--doaf',
                 # '--af-func', self.path.name, '--depoint',
                 str(self.file_c),
                 '--out', self._cil_c,
@@ -60,6 +77,7 @@ class Function(P):
             _cont += "extern void pt_stub(void*, char*, int); extern void su_stub(int);"
             with open(self._cil_c, 'w') as f:
                 f.write(_cont)
+            logger.debug('cil.c: {}'.format(self._cil_c))
         return self._cil_c
 
     @property
@@ -74,6 +92,8 @@ class Function(P):
             ]
             assert run(_compile_cmd, stdout=PIPE, stderr=PIPE).returncode == 0, str(self.path) + ' '.join(_compile_cmd)
             assert run(['chmod', '+x', self._cil_o]).returncode == 0, "chown of {} failed.".format(self._cil_o)
+
+            logger.debug('cil.o: {}'.format(self._cil_o))
         return self._cil_o
 
     def __str__(self):
@@ -119,26 +139,35 @@ class Test(P):
         return run(_test_cmd, stdout=PIPE).stdout.decode().strip().split('\n')
 
 
-def main_func(p: str):
+def main_func(p: str, detail: bool):
     _f = Function(p)
     res = {}
     for t in _f.tests:
         r = int(match(r'\((\d+)\)', t.run()[-1]).group(1))
         if r not in res:
-            res[r] = set()
-        res[r].add(t.name)
-    print(res)
+            res[r] = [] if detail else 0
+        if detail:
+            res[r].append(t.name)
+        else:
+            res[r] += 1
+    print(dumps(res, indent=2))
 
 
 if __name__ == '__main__':
     argp = ArgumentParser()
 
+    argp.add_argument('--debug', action='store_true')
+
     subp = argp.add_subparsers(dest='command')
 
     func = subp.add_parser('func', help='run test use given test case of function')
     func.add_argument('path', type=str)
+    func.add_argument('--detail', action='store_true', default=False)
 
     args = argp.parse_args()
 
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+
     if args.command == 'func':
-        main_func(args.path)
+        main_func(args.path, args.detail)

@@ -5,6 +5,10 @@ let (||>) : 'a -> ('a -> 'b) -> 'b = fun a -> fun f -> f a
 
 let af_func_name : string ref = ref ""
 
+let stub_with_location l =
+  let df_fun = Cil.emptyFunction "su_stub" in
+  Call(None,Lval(Var df_fun.svar,NoOffset),[Cil.integer (l.line)], l)
+
 class afVisitor = object(self)
 	inherit nopCilVisitor
 
@@ -22,14 +26,24 @@ class afVisitor = object(self)
       );
     DoChildren
 
-  method vinst st = 
-	  let df_fun = Cil.emptyFunction "su_stub" in
+  (* method vinst st =
 	  let df_monitor_call =
-      Call(None,Lval(Var df_fun.svar,NoOffset),[Cil.integer (!currentLoc.line)], !currentLoc) in
+      stub_with_location !currentLoc in
 	  if at_func = false then
       DoChildren
     else
-      ChangeTo([df_monitor_call ; st])
+      ChangeTo([df_monitor_call ; st]) *)
+
+  method vblock bk =
+    let stub_with_stmt st l = [mkStmtOneInstr (stub_with_location l); st;] in
+    let rec inst_with_stmt insts =
+      List.fold_left (fun l i -> l @ [stub_with_location (get_instrLoc i);i]) [] insts in
+    let with_succ_stub st =
+      match st.skind with
+      | Instr(insts) -> [ {st with skind=Instr (inst_with_stmt insts)} ]
+      | _ -> stub_with_stmt st (get_stmtLoc st.skind) in
+    let adder stmts = List.fold_left (fun l s -> l @ with_succ_stub s) [] stmts in
+    ChangeDoChildrenPost({bk with bstmts = adder bk.bstmts}, fun x -> x)
 end;;
 
 let handle_f (vis : cilVisitor) (f : fundec) : unit =
@@ -42,7 +56,7 @@ let file_handler (vis : cilVisitor) : (file -> unit) =
     | _ -> ()
   ) f.globals) ||> ignore)
 
-let feature : featureDescr = 
+let feature : featureDescr =
   { fd_name = "af";
     fd_enabled = ref false;
     fd_description = "af";
