@@ -106,6 +106,7 @@ let features : C.featureDescr list =
     Liveness.feature;
     Af.feature;
     Bf.feature;
+    Breach.feature;
   ] 
   @ Feature_config.features 
 

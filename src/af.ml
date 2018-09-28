@@ -1,7 +1,7 @@
 open Cil
 module E = Errormsg
 
-let (||>) : 'a -> ('a -> 'b) -> 'b = fun a -> fun f -> f a
+open Caututils
 
 let af_func_name : string ref = ref ""
 
@@ -20,8 +20,7 @@ class afVisitor = object(self)
     | _ ->
       let re = Str.regexp_string !af_func_name in
       try ignore (Str.search_forward re f.svar.vname 0); true
-      with Not_found ->
-        false
+      with Not_found -> false
         (* f.svar.vname = "main" *)
       );
     DoChildren
@@ -47,14 +46,14 @@ class afVisitor = object(self)
 end;;
 
 let handle_f (vis : cilVisitor) (f : fundec) : unit =
-  visitCilFunction vis f ||> ignore
+  visitCilFunction vis f |> ignore
 
 let file_handler (vis : cilVisitor) : (file -> unit) =
   fun f -> ((List.iter (fun f ->
     match f with
     | GFun(fd, _) -> handle_f vis fd
     | _ -> ()
-  ) f.globals) ||> ignore)
+  ) f.globals) |> ignore)
 
 let feature : featureDescr =
   { fd_name = "af";
