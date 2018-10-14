@@ -1,4 +1,6 @@
+from atexit import register
 from functools import partial
+from glob import glob
 from re import match
 from subprocess import run, DEVNULL, PIPE, Popen
 from tempfile import NamedTemporaryFile
@@ -8,12 +10,20 @@ cil_bin = 'cilly.native'
 error_stmt = 'assert(0);'
 
 
+def cleanup_tmp(tmp_name, wild=False):
+    if wild:
+        tmp_name = tmp_name + '*'
+    for _c in glob(tmp_name):
+        run(['rm', _c])
+
+
 def get_tmp(suffix=None, mod=None):
     _ = NamedTemporaryFile(suffix=suffix, delete=False)
     _out = _.name
     _.close()
     if mod is not None:
         run('chmod {} {}'.format(mod, _out), shell=True)
+    register(cleanup_tmp, _out, suffix == '.c')
     return _out
 
 
@@ -41,6 +51,7 @@ if __name__ == '__main__':
         argp.error('supported cil not found')
 
     argp.add_argument('source', type=FileType('r'))
+    argp.add_argument('--out', type=FileType('w'), default='-')
 
     args = argp.parse_args()
 
@@ -92,7 +103,4 @@ if __name__ == '__main__':
     )
 
     with open('{}.cil.c'.format(_preprocessed)) as s:
-        with open('{}.mc.c'.format(_preprocessed), 'w') as t:
-            t.write(s.read().replace(stub_func, _assert_label))
-
-    print('{}.mc.c'.format(_preprocessed))
+        args.out.write(s.read().replace(stub_func, _assert_label))

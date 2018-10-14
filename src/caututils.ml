@@ -3,7 +3,7 @@ open Cil
 let id = fun a -> a
 (* let (||>) : 'a -> ('a -> 'b) -> 'b = fun a -> fun f -> f a *)
 
-let locFirstLine = { locUnknown with line = 1 }
+let locFirstLine = { locUnknown with line = 0 }
 
 class countVisitor = object(self)
 	inherit nopCilVisitor
