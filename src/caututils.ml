@@ -6,7 +6,7 @@ let id = fun a -> a
 let locFirstLine = { locUnknown with line = 0 }
 
 class countVisitor = object(self)
-	inherit nopCilVisitor
+  inherit nopCilVisitor
 
   val mutable _count : int = 0
   method count = _count
@@ -21,13 +21,13 @@ let mkFunStmt s = mkStmtOneInstr(Call(None,Lval(Var (Cil.emptyFunction s).svar,N
 
 let file_counter (vis : countVisitor) (str : string) (br_target : int) : (file -> unit) = 
   fun f -> (
-    List.iter (fun f ->
-      match f with
-      | GFun(fd, _) -> visitCilFunction (vis :> cilVisitor) fd |> ignore
-      | _ -> visitCilGlobal (vis :> cilVisitor) f |> ignore
-    ) f.globals;
-    if br_target > vis#count then
-      Printf.sprintf "branch target is invalid: %d of %d" br_target vis#count |> failwith;
-    if br_target == 0 then
-      Printf.printf "%s(%d)" str vis#count;
-  )
+      List.iter (fun f ->
+          match f with
+          | GFun(fd, _) -> visitCilFunction (vis :> cilVisitor) fd |> ignore
+          | _ -> visitCilGlobal (vis :> cilVisitor) f |> ignore
+        ) f.globals;
+      if br_target > vis#count then
+        Printf.sprintf "branch target is invalid: %d of %d" br_target vis#count |> failwith;
+      if br_target == 0 then
+        Printf.printf "%s(%d)" str vis#count;
+    )
