@@ -1,3 +1,5 @@
+#!env python3
+
 from atexit import register
 from functools import partial
 from glob import glob

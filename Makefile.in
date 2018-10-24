@@ -53,6 +53,8 @@ OBJDIR      = _build
 BINDIR		  = bin
 CILLYDIR	  = lib
 
+CAUTDIR = _yyc
+
 OCAMLBEST = @OCAMLBEST@
 CILLIB_FILES = $(OBJDIR)/src/cil.cma
 ifeq ($(OCAMLBEST),opt)
@@ -63,6 +65,7 @@ else
 endif
 
 EXE = $(EXEMODE)$(EXEEXT)
+CAUT = .caut
 
 OCAMLBUILD = @OCAMLBUILD@
 OCAMLBUILD += -build-dir $(OBJDIR) -no-links -classic-display
@@ -85,6 +88,10 @@ $(OBJDIR)/doc/%: .FORCE
 .PHONY: cillib
 cillib: $(CILLIB_FILES) $(OBJDIR)/src/cil.libfiles
 
+# caut script
+$(BINDIR)/$(CILLY)$(CAUT): $(CAUTDIR)/br_reach.py
+	cp $< $@
+
 # cilly main executable
 $(BINDIR)/$(CILLY)$(EXE): $(OBJDIR)/src/main$(EXEMODE)
 	cp $< $@
@@ -104,7 +111,7 @@ $(CILLYDIR)/Makefile: Makefile $(CILLYDIR)/Makefile.PL $(CILLYDIR)/App/$(CILLYMO
 	cd $(CILLYDIR); $(PERL) Makefile.PL
 
 .PHONY: $(CILLY)
-$(CILLY): $(BINDIR)/$(CILLY)$(EXE) $(CILLYDIR)/Makefile
+$(CILLY): $(BINDIR)/$(CILLY)$(EXE) $(BINDIR)/$(CILLY)$(CAUT) $(CILLYDIR)/Makefile
 	$(MAKE) -C $(CILLYDIR)
 
 # Create the machine dependency module
