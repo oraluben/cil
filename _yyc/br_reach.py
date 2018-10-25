@@ -53,6 +53,7 @@ if __name__ == '__main__':
     argp.add_argument('source', type=FileType('r'))
     argp.add_argument('--out', type=FileType('w'), default='-')
     argp.add_argument('--single-flag', action='store_true')
+    argp.add_argument('--error-stmt', type=str, default=error_stmt)
 
     args = argp.parse_args()
 
@@ -115,4 +116,4 @@ if __name__ == '__main__':
     )
 
     with open('{}.cil.c'.format(_preprocessed)) as s:
-        args.out.write('void err() {assert(0);}\n' + s.read().replace(stub_func, _assert_label))
+        args.out.write('void err() {{ {}; }}\n'.format(args.error_stmt) + s.read().replace(stub_func, _assert_label))
