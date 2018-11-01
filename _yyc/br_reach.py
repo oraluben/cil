@@ -107,8 +107,8 @@ if __name__ == '__main__':
     assert len(_oracle) == _br, '{} {}!={}'.format(_oracle_str, len(_oracle), _br)
 
     _error_func = 'err();'
-    _assert_label = 'if(!({})) {{ {} }}'.format(
-        '&&'.join([
+    _assert_label = 'if(!(\n{}\n)) {{ {} }}'.format(
+        '\n&&'.join([
             '(_br_{}=={})'.format(i + 1, _oracle[i])
             for i in range(_br)
         ]),
